@@ -50,6 +50,8 @@ void znajdzPare(enum osoby mezczyzna, enum osoby kobieta)
 
 int main()
 {
+	system("chcp 65001");
+	system("cls");
 	for (int i = 0; i <= LICZBA_OSOB; i++)
 	{
 		pary[i] = -1;
