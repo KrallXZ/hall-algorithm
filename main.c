@@ -16,6 +16,23 @@ int ocena(int mezczyzna, int kobieta)
 	return ocena;
 }
 
+void pokazPreferencje()
+{
+	for (int i = 0; i < LICZBA_MEZCZYZN; i++)
+	{
+		printf("Preferencje %s:\n", imiona[i]);
+		for (int j = 0; j < LICZBA_KOBIET; j++)
+		{
+			enum osoby osoba = preferencje[i][j];
+			if (osoba == 0) {
+				break;
+			}
+
+			printf("\t%d. %s\n", j + 1, imiona[preferencje[i][j]]);
+		}
+	}
+}
+
 void pokazPary()
 {
 	printf("Uzyskane pary to:\n");
@@ -52,6 +69,9 @@ int main()
 {
 	system("chcp 65001");
 	system("cls");
+
+	pokazPreferencje();
+
 	for (int i = 0; i <= LICZBA_OSOB; i++)
 	{
 		pary[i] = -1;
@@ -66,10 +86,11 @@ int main()
 		{
 			if (pary[i] != -1)
 				continue;
-			
+
 			propozycje[i] += 1;
-			
-			if (propozycje[i] < LICZBA_KOBIET) {
+
+			if (propozycje[i] < LICZBA_KOBIET)
+			{
 				znajdzPare(i, preferencje[i][propozycje[i]]);
 				szukajDalej = 1;
 			}
