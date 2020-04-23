@@ -1,103 +1,145 @@
 #include <stdio.h>
-#include "osoby.h"
+#include <stdlib.h>
+#include <stdbool.h>
+#include "menu.h"
+#include "persons.h"
 
-enum osoby pary[LICZBA_OSOB];
-int propozycje[LICZBA_MEZCZYZN];
-
-int ocena(int mezczyzna, int kobieta)
+int getPairRating(Person *lady, Person *gentleman)
 {
-	unsigned int ocena = 0;
+	unsigned int rating = 0;
 
 	do
 	{
-		ocena++;
-	} while (ocena <= LICZBA_MEZCZYZN && preferencje[mezczyzna][ocena] != kobieta);
+		rating++;
+	} while (rating <= MAX && (lady->preferences[rating] != gentleman->id));
 
-	return ocena;
+	return rating;
 }
 
-void pokazPreferencje()
-{
-	for (int i = 0; i < LICZBA_MEZCZYZN; i++)
-	{
-		printf("Preferencje %s:\n", imiona[i]);
-		for (int j = 0; j < LICZBA_KOBIET; j++)
-		{
-			enum osoby osoba = preferencje[i][j];
-			if (osoba == 0) {
-				break;
-			}
-
-			printf("\t%d. %s\n", j + 1, imiona[preferencje[i][j]]);
-		}
-	}
-}
-
-void pokazPary()
+void printPairs(Persons *ladies, Persons *gentlemans, unsigned int *ladiesPairs)
 {
 	printf("Uzyskane pary to:\n");
-	for (int i = 0; i < LICZBA_MEZCZYZN; i++)
+	for (int i = 0; i < ladies->count; i++)
 	{
-		if (pary[i] == -1)
+		if (ladiesPairs[i] == -1)
 		{
-			printf("\t%s nie ma pary. :(\n", imiona[i]);
+			printf("\t%s nie ma pary. 💔\n", ladies->array[i]->name);
 			continue;
 		}
 
-		printf("\t%s ♥ %s\n", imiona[i], imiona[pary[i]]);
+		printf("\t%s 💕 %s\n", ladies->array[i]->name, gentlemans->array[ladiesPairs[i]]->name);
 	}
 }
 
-void znajdzPare(enum osoby mezczyzna, enum osoby kobieta)
+void findPair(Person *lady, Person *gentleman, unsigned int *ladiesPairs, unsigned int *gentlemansPairs, Persons *ladies)
 {
-	int paraKobiety = pary[kobieta];
+	unsigned int gentlemanPair = gentlemansPairs[gentleman->id];
 
-	if (paraKobiety == -1)
+	if (gentlemanPair == -1)
 	{
-		pary[mezczyzna] = kobieta;
-		pary[kobieta] = mezczyzna;
+		ladiesPairs[lady->id] = gentleman->id;
+		gentlemansPairs[gentleman->id] = lady->id;
 	}
-	else if (ocena(kobieta, mezczyzna) < ocena(kobieta, paraKobiety))
+	else if (getPairRating(lady, gentleman) < getPairRating(ladies->array[gentlemanPair], lady))
 	{
-		pary[paraKobiety] = -1;
-		pary[mezczyzna] = kobieta;
-		pary[kobieta] = mezczyzna;
+		ladiesPairs[gentlemanPair] = -1;
+		ladiesPairs[lady->id] = gentleman->id;
+		gentlemansPairs[gentleman->id] = lady->id;
 	}
+}
+
+void makePairs(Persons *ladies, Persons *gentlemans)
+{
+	unsigned int *ladiesPairs = malloc(sizeof(unsigned int) * ladies->count);
+	unsigned int *ladiesPropositions = malloc(sizeof(unsigned int) * ladies->count);
+	unsigned int *gentlemansPairs = malloc(sizeof(unsigned int) * gentlemans->count);
+
+	for (int i = 0; i <= ladies->count; i++)
+	{
+		ladiesPairs[i] = -1;
+		ladiesPropositions[i] = 0;
+	}
+
+	for (int i = 0; i <= gentlemans->count; i++)
+	{
+		gentlemansPairs[i] = -1;
+	}
+
+	bool done;
+
+	do
+	{
+		done = true;
+		for (int i = 0; i < ladies->count; i++)
+		{
+			if (ladiesPairs[i] != -1)
+			{
+				continue;
+			}
+
+			if (ladiesPropositions[i] < ladies->array[i]->preferencesCount)
+			{
+				findPair(ladies->array[i], gentlemans->array[ladies->array[i]->preferences[ladiesPropositions[i]]], ladiesPairs, gentlemansPairs, ladies);
+				ladiesPropositions[i] += 1;
+				done = false;
+			}
+		}
+	} while (!done);
+
+	printf("Jak chcesz wyświetlić pary?");
+	unsigned int choice = showPrintMenu();
+	switch (choice)
+	{
+	case 1:
+		printPairs(ladies, gentlemans, ladiesPairs);
+		break;
+	case 2:
+		printPairs(gentlemans, ladies, gentlemansPairs);
+		break;
+	case 0:
+		return;
+	}
+	showBackMenu();
 }
 
 int main()
 {
+#ifdef _WIN32
 	system("chcp 65001");
 	system("cls");
+#endif
 
-	pokazPreferencje();
+	Persons *ladies = createPersons();
+	Persons *gentlemans = createPersons();
 
-	for (int i = 0; i <= LICZBA_OSOB; i++)
+	while (true)
 	{
-		pary[i] = -1;
-		propozycje[i] = -1;
-	}
-
-	int szukajDalej;
-	do
-	{
-		szukajDalej = 0;
-		for (int i = 0; i <= LICZBA_MEZCZYZN; i++)
+#ifdef _WIN32
+		system("cls");
+#else
+		system("clear");
+#endif
+		printf("-=Love Maker 3000 💞=-\n");
+		printf("W bazie jest aktualnie 👩 %d/%d kobiet oraz 👨 %d/%d mężczyzn.\n", ladies->count, MAX, gentlemans->count, MAX);
+		unsigned int choice = showMainMenu();
+		switch (choice)
 		{
-			if (pary[i] != -1)
-				continue;
-
-			propozycje[i] += 1;
-
-			if (propozycje[i] < LICZBA_KOBIET)
-			{
-				znajdzPare(i, preferencje[i][propozycje[i]]);
-				szukajDalej = 1;
-			}
+		case 1:
+			printf("👩 Lista kobiet:\n");
+			printPersons(ladies, gentlemans);
+			break;
+		case 2:
+			printf("👨 Lista mężczyzn:\n");
+			printPersons(gentlemans, ladies);
+			break;
+		case 3:
+			makePairs(ladies, gentlemans);
+			break;
+		case 0:
+			printf("Dziękujemy za skorzystanie z programu! 😍\n");
+			return 0;
 		}
-	} while (szukajDalej);
-
-	pokazPary();
+	}
 
 	return 0;
 }
